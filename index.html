@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesting Maastricht – Historische Perioden</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Nunito:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(135deg, #0a0e14 0%, #0d1520 50%, #0a0e14 100%);
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Nunito', sans-serif;
+    gap: 32px;
+    padding: 24px 20px;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(12px, 2.5vw, 15px);
+    color: #64c8f0;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    opacity: 1;
+  }
+
+  .pointer {
+    width: 0; height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 28px solid #2196c8;
+    filter: drop-shadow(0 4px 14px rgba(33,150,200,0.7));
+    margin-bottom: -14px;
+    z-index: 10;
+  }
+
+  .container {
+    position: relative;
+    /* Fluid: fills available width up to 480px */
+    width: min(480px, calc(100vw - 40px));
+    height: min(480px, calc(100vw - 40px));
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  svg.wheel {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 8px 40px rgba(0,0,0,0.6));
+    transform-origin: center center;
+  }
+
+  .slice { cursor: pointer; }
+
+  .period-emoji {
+    position: absolute;
+    pointer-events: none;
+    line-height: 1;
+    user-select: none;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  }
+
+  .btn {
+    padding: 11px 28px;
+    background: linear-gradient(135deg, #1578a8, #2196c8);
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Cinzel', serif;
+    font-size: clamp(12px, 3vw, 15px);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(33,150,200,0.4);
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .btn:hover { transform: scale(1.04); box-shadow: 0 6px 24px rgba(33,150,200,0.6); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { background: #555; color: #999; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Info panel */
+  .info-panel {
+    width: 290px;
+    min-width: 240px;
+    max-width: 340px;
+    height: 520px;
+    background: linear-gradient(180deg, #0d1117 0%, #111825 100%);
+    border: 1px solid rgba(33,150,200,0.3);
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 1;
+  }
+
+  .info-panel.empty {
+    align-items: center;
+    justify-content: center;
+    color: rgba(140,210,240,0.95);
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+    gap: 14px;
+    font-family: 'Cinzel', serif;
+  }
+
+  /* ── MOBILE: stack vertically ── */
+  @media (max-width: 700px) {
+    body {
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 32px;
+      gap: 20px;
+    }
+    .container {
+      width: min(92vw, 420px);
+      height: min(92vw, 420px);
+    }
+    .info-panel {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+      max-height: 55vh;
+      min-height: 200px;
+    }
+    .info-panel.empty {
+      min-height: 160px;
+      padding: 20px;
+    }
+    h1 { font-size: 13px; letter-spacing: 2px; }
+  }
+
+  @media (max-width: 400px) {
+    .container {
+      width: 95vw;
+      height: 95vw;
+    }
+    .btn { font-size: 12px; padding: 10px 22px; }
+  }
+
+  .panel-header {
+    padding: 20px 20px 16px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .period-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .cat-icon {
+    font-size: 30px;
+    line-height: 1;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  }
+
+  .cat-name {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2196c8;
+    line-height: 1.3;
+  }
+
+  .cat-years {
+    font-size: 11px;
+    color: rgba(33,150,200,0.65);
+    font-style: italic;
+  }
+
+  .cat-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.65;
+  }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(33,150,200,0.35) transparent;
+  }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: rgba(33,150,200,0.35); border-radius: 2px; }
+
+  .facts-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(33,150,200,0.6);
+    margin-bottom: 10px;
+  }
+
+  .fact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border-left: 2px solid;
+    transition: background 0.15s;
+  }
+  .fact-item:hover { background: rgba(255,255,255,0.07); }
+
+  .fact-emoji {
+    font-size: 16px;
+    line-height: 1.3;
+    flex-shrink: 0;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  }
+
+  .fact-text {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.5;
+  }
+
+  .fact-text strong {
+    color: #2196c8;
+    font-weight: 700;
+  }
+
+  .persons-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(33,150,200,0.6);
+    margin: 12px 0 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .person-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(33,150,200,0.07);
+    border-radius: 10px;
+    margin-bottom: 7px;
+    border-left: 2px solid rgba(33,150,200,0.5);
+    transition: background 0.15s;
+  }
+  .person-card:hover { background: rgba(33,150,200,0.13); }
+  .person-avatar {
+    font-size: 22px;
+    line-height: 1.2;
+    flex-shrink: 0;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  }
+  .person-info { flex: 1; }
+  .person-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64c8f0;
+    margin-bottom: 2px;
+  }
+  .person-role {
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    font-style: italic;
+    margin-bottom: 3px;
+  }
+  .person-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+  }
+  .tooltip {
+    position: fixed;
+    background: rgba(8,14,24,0.96);
+    color: #2196c8;
+    border: 1px solid rgba(33,150,200,0.35);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Cinzel', serif;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 99;
+    white-space: nowrap;
+  }
+  .tooltip.visible { opacity: 1; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @media (max-width: 700px) {
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  }
+  .slide-in { animation: slideIn 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="left">
+  <h1>Vestingmuseum Maastricht</h1>
+  <p style="font-family:'Nunito',sans-serif;font-size:11px;color:rgba(140,210,240,0.9);letter-spacing:2px;text-align:center;margin-top:-14px;text-transform:uppercase;">De Vesting door de Eeuwen</p>
+  <div class="pointer"></div>
+  <div class="container" id="wheel-container">
+    <svg class="wheel" id="wheel-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Periode 1: Romeins (rood-bruin) -->
+        <linearGradient id="gRomein" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#c0392b"/>
+          <stop offset="100%" stop-color="#7b2318"/>
+        </linearGradient>
+        <!-- Periode 2: Vroeg Middeleeuws (donker paars) -->
+        <linearGradient id="gVroegMiddel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#6c3483"/>
+          <stop offset="100%" stop-color="#4a2357"/>
+        </linearGradient>
+        <!-- Periode 3: Middeleeuws (steen-grijs blauw) -->
+        <linearGradient id="gMiddel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#2471a3"/>
+          <stop offset="100%" stop-color="#1a4f72"/>
+        </linearGradient>
+        <!-- Periode 4: Spaans/Bourgondisch (donker goud) -->
+        <linearGradient id="gSpaans" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#d4ac0d"/>
+          <stop offset="100%" stop-color="#9a7d0a"/>
+        </linearGradient>
+        <!-- Periode 5: Republiek/Barok (groen) -->
+        <linearGradient id="gRepubliek" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1e8449"/>
+          <stop offset="100%" stop-color="#145a32"/>
+        </linearGradient>
+        <!-- Periode 6: Frans/Opheffing (grijs) -->
+        <linearGradient id="gFrans" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#717d7e"/>
+          <stop offset="100%" stop-color="#4d5656"/>
+        </linearGradient>
+
+        <clipPath id="circleClip">
+          <circle cx="250" cy="250" r="238"/>
+        </clipPath>
+
+        <!-- Subtle texture overlay -->
+        <filter id="texture">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+          <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
+          <feBlend in="SourceGraphic" in2="grayNoise" mode="multiply" result="blend"/>
+          <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+        </filter>
+      </defs>
+
+      <g clip-path="url(#circleClip)">
+        <!-- Background circle -->
+        <circle cx="250" cy="250" r="238" fill="#1a1208"/>
+
+        <!-- 6 perioden – gelijke segmenten van elk 60° -->
+        <!-- Periode 1: Romeins 0°→80° -->
+        <g class="slice" data-label="Romeinse Tijd">
+          <path d="M250,250 L250,12 A238,238 0 0,1 459,369 Z" fill="url(#gRomein)" opacity="0.92"/>
+        </g>
+        <!-- Periode 2: Vroeg Middeleeuws 80°→160° -->
+        <g class="slice" data-label="Vroege Middeleeuwen">
+          <path d="M250,250 L459,369 A238,238 0 0,1 41,369 Z" fill="url(#gVroegMiddel)" opacity="0.92"/>
+        </g>
+        <!-- Periode 3: Middeleeuws 160°→240° -->
+        <g class="slice" data-label="Middeleeuwen – Stadsmuren">
+          <path d="M250,250 L41,369 A238,238 0 0,1 131,12 Z" fill="url(#gMiddel)" opacity="0.92"/>
+        </g>
+        <!-- Periode 4: Spaans/Bourgondisch 240°→300° -->
+        <g class="slice" data-label="Bourgondisch &amp; Spaans Bestuur">
+          <path d="M250,250 L131,12 A238,238 0 0,1 250,12 Z" fill="url(#gSpaans)" opacity="0.92"/>
+        </g>
+
+        <!-- Divider lines -->
+        <g stroke="rgba(212,168,67,0.5)" stroke-width="2" >
+          <line x1="250" y1="250" x2="250" y2="12"/>
+          <line x1="250" y1="250" x2="459" y2="369"/>
+          <line x1="250" y1="250" x2="41"  y2="369"/>
+          <line x1="250" y1="250" x2="131" y2="12"/>
+        </g>
+      </g>
+
+      <!-- Outer ring -->
+      <circle cx="250" cy="250" r="238" fill="none" stroke="rgba(33,150,200,0.7)" stroke-width="4"/>
+      <circle cx="250" cy="250" r="234" fill="none" stroke="rgba(33,150,200,0.2)" stroke-width="2"/>
+
+      <!-- Center with logo -->
+      <circle cx="250" cy="250" r="84" fill="#0a0e14"/>
+      <circle cx="250" cy="250" r="84" fill="none" stroke="rgba(33,150,200,0.6)" stroke-width="2.5"/>
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQkAAAEJCAYAAACHaNJkAABq1UlEQVR42u29ebxlRX32+62qNe3hjN1MTdMMAqKCiKIgOIAjGiMmShJv1ExXjVEyGc3om5gEryZe3+Q1xsSYq0k00SiGiIjzjEHEQNCoyIzQTY9n2sOaqur+UavW2efQQEehpZt6Pp/d5/Sezt5rrXrqNz4/CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAjYR4hwCAL2LyRIBSICGYOMwPrHzNrn+fuFmbjPgK3BVqArBGb15cjmom7u81e3DUf9h0EUDsGPiJ2Fu4KtdVewUgoArXX7uBACa237HH+fMW7RSCnv9ngcxxhjMMaseey+Psf6z+Jfu7fX+9dIKdvP6//vP1sURVhr28ellEgpqY2AdIreI06zw1xBdxbyCoSFroLxCFTqVriWjjhU8zesAlNBsQS3fU8gB8hqiIwcvehaEkmFNQUGsC1JSARg15BQQCCJBzGUUmsW1yQ5ACRJQl3X7YLzC9Mv2iRJMMZQ13X7WK/XY3Z2ln6/b4899ljm5ubodDoIIZienubII4+k1+tRliUAt912G7t3724X844dO9i5cyd5nnPttdeusTD9AtdaY61FKUVd12it6XQ6GGMoimINQfjPlqYpQgjyPHePR116jzjNnvrjL2Zx/hiqzgaqcYnF0MkMw3yIUF2ElSRaIqyhViVGgLQR3XrMrm/+B3ft2g6Ly82xWyUEgQyGQyCJAx+Tu6sQYo31EEVRu5CjKGofn7QeTj31VHvYYYdxwgkncOKJJ7J582ZmZ2fbBWmtbS0Ov7D97m+MQUrJox/9aIwxxHFMkiQIIdqFn2WZ3bNnD7fffju33norN910E9/73ve44YYbxMrKCnVdt8QxHo/bz6qUoiiKNeRVluVaayROGQ5h1/RmlqePZIEOxmhiJUhSTR7nQIawkkhLJIZaVY4kjGKmWmZq4+HcNUGqSkHd8Glt6sbpCAgkcRC4G5OWgjfxq6oijmOqqqKua/r9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" x="178" y="172" width="144" height="156"/>
+    </svg>
+  </div>
+  <button class="btn" id="spinBtn">⚔ Draai door de geschiedenis</button>
+</div>
+
+<!-- Info panel -->
+<div class="info-panel empty" id="info-panel">
+  <!-- Helpoort Maastricht – nagetekend naar foto -->
+  <svg width="90" height="100" viewBox="0 0 90 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Steen textuur gradient -->
+      <linearGradient id="stoneL" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#5a4a3a"/>
+        <stop offset="40%"  stop-color="#7a6550"/>
+        <stop offset="100%" stop-color="#4a3c2e"/>
+      </linearGradient>
+      <linearGradient id="stoneR" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#4a3c2e"/>
+        <stop offset="60%"  stop-color="#7a6550"/>
+        <stop offset="100%" stop-color="#5a4a3a"/>
+      </linearGradient>
+      <linearGradient id="stoneC" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#6a5848"/>
+        <stop offset="50%"  stop-color="#8a7260"/>
+        <stop offset="100%" stop-color="#6a5848"/>
+      </linearGradient>
+      <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#2a2a2a"/>
+        <stop offset="100%" stop-color="#444"/>
+      </linearGradient>
+      <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#1a3a5c" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#0d1520" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- SKY hint -->
+    <rect x="14" y="0" width="62" height="30" fill="url(#skyGrad)" rx="2"/>
+
+    <!-- ══ LINKER TOREN ══ -->
+    <!-- Torenbasis – breed onderaan, taps naar boven (zoals Helpoort) -->
+    <path d="M2,96 L2,42 Q2,28 14,28 L26,28 Q28,28 28,42 L28,96 Z"
+          fill="url(#stoneL)" stroke="#3a2e20" stroke-width="0.8"/>
+    <!-- Steenvoegen links -->
+    <line x1="4"  y1="50" x2="27" y2="50" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="4"  y1="60" x2="27" y2="60" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="4"  y1="70" x2="27" y2="70" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="4"  y1="80" x2="27" y2="80" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <!-- Schietspleet links -->
+    <rect x="11" y="52" width="3" height="10" rx="1" fill="#0d1520" stroke="#2a2010" stroke-width="0.5"/>
+    <!-- Ronde torenomtrek (overlay voor rondheid) -->
+    <ellipse cx="15" cy="28" rx="12" ry="4" fill="#6a5545" stroke="#3a2e20" stroke-width="0.8"/>
+    <!-- Puntige dak links -->
+    <ellipse cx="15" cy="16" rx="11" ry="3.5" fill="#333" stroke="#222" stroke-width="0.8"/>
+    <path d="M4,16 Q15,1 26,16" fill="url(#roofGrad)" stroke="#222" stroke-width="0.8"/>
+    <!-- Dakspits links -->
+    <circle cx="15" cy="2" r="1.5" fill="#555"/>
+    <line x1="15" y1="2" x2="15" y2="6" stroke="#555" stroke-width="1"/>
+
+    <!-- ══ RECHTER TOREN ══ -->
+    <path d="M62,96 L62,42 Q62,28 74,28 L88,28 Q88,28 88,42 L88,96 Z"
+          fill="url(#stoneR)" stroke="#3a2e20" stroke-width="0.8"/>
+    <!-- Steenvoegen rechts -->
+    <line x1="63" y1="50" x2="86" y2="50" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="63" y1="60" x2="86" y2="60" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="63" y1="70" x2="86" y2="70" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <line x1="63" y1="80" x2="86" y2="80" stroke="#3a2e20" stroke-width="0.4" opacity="0.5"/>
+    <!-- Schietspleet rechts -->
+    <rect x="76" y="52" width="3" height="10" rx="1" fill="#0d1520" stroke="#2a2010" stroke-width="0.5"/>
+    <!-- Ronde top rechts -->
+    <ellipse cx="75" cy="28" rx="12" ry="4" fill="#6a5545" stroke="#3a2e20" stroke-width="0.8"/>
+    <!-- Dak rechts -->
+    <ellipse cx="75" cy="16" rx="11" ry="3.5" fill="#333" stroke="#222" stroke-width="0.8"/>
+    <path d="M64,16 Q75,1 86,16" fill="url(#roofGrad)" stroke="#222" stroke-width="0.8"/>
+    <circle cx="75" cy="2" r="1.5" fill="#555"/>
+    <line x1="75" y1="2" x2="75" y2="6" stroke="#555" stroke-width="1"/>
+
+    <!-- ══ CENTRALE POORTMUUR ══ -->
+    <rect x="28" y="34" width="34" height="62" fill="url(#stoneC)" stroke="#3a2e20" stroke-width="0.8"/>
+    <!-- Steenvoegen midden -->
+    <line x1="28" y1="45" x2="62" y2="45" stroke="#3a2e20" stroke-width="0.4" opacity="0.4"/>
+    <line x1="28" y1="55" x2="62" y2="55" stroke="#3a2e20" stroke-width="0.4" opacity="0.4"/>
+
+    <!-- ══ HOUTEN ERKER (kenmerkend voor Helpoort!) ══ -->
+    <rect x="30" y="37" width="30" height="18" rx="1" fill="#8B4513" stroke="#5c2d00" stroke-width="1"/>
+    <!-- Erker ramen -->
+    <rect x="32" y="39" width="7"  height="9" rx="1" fill="#0d1520" stroke="#5c2d00" stroke-width="0.7"/>
+    <rect x="41" y="39" width="7"  height="9" rx="1" fill="#0d1520" stroke="#5c2d00" stroke-width="0.7"/>
+    <rect x="50" y="39" width="7"  height="9" rx="1" fill="#0d1520" stroke="#5c2d00" stroke-width="0.7"/>
+    <!-- Erker console (steunbalken) -->
+    <line x1="32" y1="55" x2="30" y2="58" stroke="#5c2d00" stroke-width="1.5"/>
+    <line x1="45" y1="55" x2="45" y2="58" stroke="#5c2d00" stroke-width="1.5"/>
+    <line x1="58" y1="55" x2="60" y2="58" stroke="#5c2d00" stroke-width="1.5"/>
+    <!-- Erker dak (licht hellend) -->
+    <path d="M29,37 L61,37 L62,34 L28,34 Z" fill="#5c3010" stroke="#3a1e00" stroke-width="0.7"/>
+
+    <!-- ══ GROTE RONDBOOG POORT ══ -->
+    <path d="M31,96 L31,72 Q31,58 45,58 Q59,58 59,72 L59,96 Z"
+          fill="#0d1520" stroke="#2a1a08" stroke-width="1"/>
+    <!-- Boog rand (steen) -->
+    <path d="M31,72 Q31,58 45,58 Q59,58 59,72"
+          fill="none" stroke="#8a7060" stroke-width="2.5"/>
+    <!-- Kinderkopjes straat in boog -->
+    <line x1="35" y1="90" x2="55" y2="90" stroke="#2a2010" stroke-width="0.8" opacity="0.5"/>
+    <line x1="33" y1="84" x2="57" y2="84" stroke="#2a2010" stroke-width="0.8" opacity="0.5"/>
+    <line x1="33" y1="78" x2="57" y2="78" stroke="#2a2010" stroke-width="0.8" opacity="0.5"/>
+
+    <!-- ══ GRONDLIJN ══ -->
+    <rect x="0" y="96" width="90" height="4" rx="1" fill="#2a2010" opacity="0.7"/>
+  </svg>
+  <p style="color:rgba(200,235,250,0.95);font-size:14px;line-height:1.7;">Draai het wiel en ontdek<br>een historische periode<br>van de Vesting Maastricht</p>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  // Responsive: recalculate scale from actual container size
+  function getScale() {
+    const c = document.getElementById('wheel-container');
+    return c.offsetWidth / 500;
+  }
+  function getCX() { return document.getElementById('wheel-container').offsetWidth / 2; }
+  function getCY() { return document.getElementById('wheel-container').offsetHeight / 2; }
+
+  // Use fixed values as fallback for initial render, then update
+  let scale = getScale();
+  let CX = getCX(), CY = getCY();
+
+  // Boundary angles (from-top CW):
+  // Slice 1 (Romein):       0° → 80°
+  // Slice 2 (VroegMiddel): 80° → 200°
+  // Slice 3 (Middel):     200° → 280°
+  // Slice 4 (Spaans):     280° → 360°
+
+  // Recalculate boundary points properly
+  // top   = 0°   → (250,12)
+  // 80°   → cx + 238*sin(80°), cy - 238*cos(80°) = 250+234.4, 250-41.3 = (484,209) ≈ (459,369)? No...
+  // Let me use actual trig:
+
+  // From the SVG paths I used: 
+  // Path 1 (Romein): top(250,12) → (459,369) → sweep CW  
+  // Let's calculate actual angles from these points:
+  // (459,369): dx=209, dy=119 → atan2(119,209)=29.6° std → fromTopCW = 119.6°
+  // (41,369):  dx=-209, dy=119 → atan2(119,-209)=150.4° std → fromTopCW = 240.4°  
+  // (131,12):  dx=-119, dy=-238 → atan2(-238,-119)=-116.5° std → fromTopCW = 333.5° ? that's odd
+  // Let me just define 4 equal-ish slices by correcting the paths
+
+  // I'll use proper boundary points for 4 equal 90° slices or proportional ones
+  // For the final version let me just use what I've drawn and hardcode the angles:
+  // Visual inspection of paths:
+  // Slice 1: 250,12 → 459,369 : large green-ish
+  // Slice 2: 459,369 → 41,369 : bottom half
+  // Slice 3: 41,369 → 131,12  : left side
+  // Slice 4: 131,12 → 250,12  : tiny top-left sliver???
+
+  // The 4th path from 131,12 to 250,12 is a TINY slice at the top.
+  // That's very wrong. I need to rebuild with 6 proper segments.
+
+  // Let me compute 6 equal 60° segments:
+  function svgPoint(fromTopCW) {
+    const r = 238, cx = 250, cy = 250;
+    const rad = (fromTopCW - 90) * Math.PI / 180;
+    return [Math.round(cx + r*Math.cos(rad)), Math.round(cy + r*Math.sin(rad))];
+  }
+
+  // 6 segments of 60° each:
+  const pts = [0,60,120,180,240,300,360].map(svgPoint);
+  console.log('Points:', pts);
+
+  const periodData = {
+    'Romeinse Tijd': {
+      years: 'ca. 50 n.Chr. – 400 n.Chr.',
+      icon: '🏛️',
+      color: '#7b2318',
+      accentColor: '#c0392b',
+      desc: 'De Romeinen bouwden bij de Maasbrug een castellum om hun strategisch bruggenhoofd te beschermen. Dit was de eerste stenen versterking van Maastricht – het begin van een 1500 jaar durende vestinggeschiedenis.',
+      facts: [
+        ['🧱', '<strong>Castellum</strong> – Stenen Romeins fort rondom het Onze-Lieve-Vrouweplein, bescherming van de eerste brug over de Maas'],
+        ['🌉', '<strong>Trajectum ad Mosam</strong> – Naam van de Romeinse nederzetting; "oversteek bij de Maas"'],
+        ['⚔️', '<strong>Legioen</strong> – Romeinse troepen bewaakten de Rijngrens; Maastricht was een sleutelpost'],
+        ['🏗️', '<strong>Stenen muren</strong> – Eerste ommuring in natuursteen, ronde torens, fragmenten zichtbaar in museumkelder Derlon'],
+        ['🗺️', '<strong>Strategische ligging</strong> – Kruispunt van Heeresweg (Tongeren–Keulen) en de Maasoversteek'],
+        ['🏺', '<strong>Opgravingen</strong> – Restanten zichtbaar in museumkelder Derlon aan het OLV-plein'],
+      ],
+      persons: [
+        { emoji:'🪖', name:'Gaius Julius Caesar', role:'Veldheer (100–44 v.Chr.)', desc:'Beschreef de Maasovergang in zijn verslagen; de route langs Maastricht was militair cruciaal.' },
+        { emoji:'✝️', name:'Servatius van Tongeren', role:'Bisschop (ca. 315–384)', desc:'Eerste bisschop van de Nederlanden; verplaatste zijn zetel naar Maastricht en legde de basis voor de middeleeuwse stadsmacht.' },
+        { emoji:'🏛️', name:'Constantijn de Grote', role:'Keizer (272–337)', desc:'Liet de Rijngrens versterken; Maastricht groeide als doorgang naar Keulen onder zijn bewind in betekenis.' },
+      ]
+    },
+    'Vroege Middeleeuwen': {
+      years: 'ca. 400 – 1229',
+      icon: '⛪',
+      color: '#4a2357',
+      accentColor: '#8e44ad',
+      desc: 'Na de Romeinen vervielen de versterkingen. Maastricht groeide uit tot religieus centrum rond de Sint-Servaasbasiliek. Aarden wallen en palissaden boden bescherming. De stad had twee heren: de bisschop van Luik en de hertog van Brabant.',
+      facts: [
+        ['⛪', '<strong>Sint-Servaasabdij</strong> – Groeiend religieus centrum trok pelgrims en macht naar Maastricht'],
+        ['🤝', '<strong>Twee heren</strong> – Bisschop van Luik én Hertog van Brabant deelden het gezag, wat leidde tot de Alde Caerte (1284)'],
+        ['🌿', '<strong>Aarden wallen</strong> – Twee aarden omwallingen met palissaden, nog vóór de stenen muren'],
+        ['👑', '<strong>Karolingers</strong> – Karel Martel en Pippijn kwamen door Maastricht; mogelijk palts op het Vrijthof'],
+        ['📜', '<strong>1229 – Stadsrechten</strong> – Hertog van Brabant verleende stadsrechten en toestemming voor stenen omwalling'],
+        ['🗼', '<strong>Eerste stadsmuur</strong> – Ca. 2,4 km lang, 5,5-9 m hoog, 1,25 m dik; Helpoort is het oudste overblijfsel'],
+      ],
+      persons: [
+        { emoji:'⚜️', name:'Karel de Grote', role:'Frankisch keizer (742–814)', desc:'Liet doorgangen langs de Maas versterken; Maastricht speelde een rol in zijn Europese rijksorganisatie.' },
+        { emoji:'👑', name:'Hendrik I van Brabant', role:'Hertog (1165–1235)', desc:'Verleende in 1229 de stadsrechten en gaf opdracht tot de bouw van de eerste stenen stadsmuur.' },
+        { emoji:'📜', name:'Bisschoppen van Luik', role:'Geestelijk heer (vanaf ca. 720)', desc:'Deelden samen met Brabant het gezag; de unieke tweeheerlijkheid werd vastgelegd in de Alde Caerte van 1284.' },
+      ]
+    },
+    'Middeleeuwen – Stadsmuren': {
+      years: 'ca. 1229 – 1500',
+      icon: '🗼',
+      color: '#1a4f72',
+      accentColor: '#2980b9',
+      desc: 'Maastricht groeide snel. Eerst de eerste stadsmuur (1229), al snel gevolgd door een tweede omwalling. De stad werd een machtig handelscentrum en "Sleutel van Brabant". De Helpoort stamt uit deze periode.',
+      facts: [
+        ['🏰', '<strong>Eerste stadsmuur (1229)</strong> – 2,4 km lang; Helpoort is het enige bewaard gebleven stadspoortje'],
+        ['🗼', '<strong>Tweede stadsmuur (14e eeuw)</strong> – Uitbreiding naar 3,5 km; Pater Vincktoren bewaard gebleven'],
+        ['🔑', '<strong>Sleutel van Brabant</strong> – Maastricht beschermde de zuidgrens van het Hertogdom Brabant'],
+        ['⚔️', '<strong>Belegeringen</strong> – De stad weerstond diverse aanvallen dankzij de dubbele ommuring'],
+        ['🌊', '<strong>Grachten</strong> – Diepe stadsgrachten versterkten de muren; de Jeker speelde een cruciale rol'],
+        ['🚪', '<strong>Stadspoorten</strong> – Meerdere poorten bewakten de toegang; alle later gesloopt behalve de Helpoort'],
+        ['🧱', '<strong>Wyck</strong> – Oostoever bij Wyck kreeg eigen omwalling in de 14e eeuw'],
+      ],
+      persons: [
+        { emoji:'🏰', name:'Jan I van Brabant', role:'Hertog (1252–1294)', desc:'Versterkte Maastricht als "Sleutel van Brabant"; liet de vestingwerken uitbreiden om de zuidflank van zijn hertogdom te beschermen.' },
+        { emoji:'⚔️', name:'Jan van Arkel', role:'Bisschop van Luik (1364–1378)', desc:'Belegerde Maastricht in 1367; de dubbele stadsmuur hield stand en bewees zijn waarde als verdedigingssysteem.' },
+        { emoji:'🏗️', name:'Anonieme stadsarchitecten', role:'14e–15e eeuw', desc:'De bouwmeesters van de tweede stadsmuur creëerden 3,5 km versterking met tientallen torens — een meesterwerk van middeleeuwse ingenieurskunst.' },
+      ]
+    },
+    'Bourgondisch & Spaans Bestuur': {
+      years: 'ca. 1500 – 1632',
+      icon: '👑',
+      color: '#7d6608',
+      accentColor: '#d4ac0d',
+      desc: 'De uitvinding van het buskruit maakte middeleeuwse muren kwetsbaar. Maastricht moderniseerde ingrijpend met bastions, rondelen en kazematten. Onder Spaans bewind groeide de stad uit tot een van de sterkste vestingen van de Lage Landen.',
+      facts: [
+        ['💣', '<strong>Buskruit</strong> – Kanonnen maakten hoge muren nutteloos; lage, dikke bastions vervingen de torens'],
+        ['🏗️', '<strong>Rondelen (1515–1517)</strong> – De Drie Duiven (later De Vijf Koppen) en Haet ende Nijt gebouwd'],
+        ['⚔️', '<strong>Beleg van 1579</strong> – Alessandro Farnese veroverde de stad; duizenden burgers omgekomen'],
+        ['🗡️', '<strong>Verraad van Maastricht (1638)</strong> – Samenzwering ontdekt; vijf hoofden tentoongesteld op De Vijf Koppen'],
+        ['🏰', '<strong>Bastions & bolwerken</strong> – Uitgebreid stelsel van bastions, courtines en voorwerken aangelegd'],
+        ['⛏️', '<strong>Kazematten</strong> – Ondergrondse gangstelsel begon te ontstaan voor veilige troepenbewegingen'],
+        ['🇪🇸', '<strong>Spaans garnizoen</strong> – Maastricht was één van de belangrijkste garnizoensplaatsen van de Spaanse Nederlanden'],
+      ],
+      persons: [
+        { emoji:'⚔️', name:'Alessandro Farnese', role:'Spaans legeraanvoerder (1545–1592)', desc:'Veroverde Maastricht in 1579 na een bloedig beleg; de val leidde tot massale burgerslachtoffers en de definitieve Spaanse heerschappij.' },
+        { emoji:'👑', name:'Karel V', role:'Rooms-Duits keizer (1500–1558)', desc:'Liet als heer der Nederlanden de vestingwerken moderniseren; onder zijn bewind werd Maastricht omgebouwd tot een vroeg-moderne bastionvesting.' },
+        { emoji:'🗡️', name:'Filips II van Spanje', role:'Koning (1527–1598)', desc:'Onder zijn gezag was Maastricht het strategisch middelpunt van de Spaanse Nederlanden; stuurde Farnese om de opstand neer te slaan.' },
+      ]
+    },
+    'Republiek & Vestinggordel': {
+      years: 'ca. 1632 – 1794',
+      icon: '🛡️',
+      color: '#145a32',
+      accentColor: '#27ae60',
+      desc: 'Na de verovering door Frederik Hendrik (1632) werd Maastricht het "Bolwerk der Nederlanden". Vestingbouwers als Menno van Coehoorn bouwden een complete vestinggordel met lunetten, hoornwerken en 10+ km ondergrondse kazematten.',
+      facts: [
+        ['🏴', '<strong>1632 – Verovering Frederik Hendrik</strong> – Na beleg van 23 dagen; Maastricht werd Staatse vesting'],
+        ['🛡️', '<strong>Bolwerk der Nederlanden</strong> – De stad gold als de sterkste vesting van de Republiek'],
+        ['🏗️', '<strong>Menno van Coehoorn</strong> – Beroemde vestingbouwer moderniseerde de werken (1685–1730)'],
+        ['⛏️', '<strong>Kazematten</strong> – Ruim 10 km ondergrondse gangen, mijngalerijen en caponnières aangelegd'],
+        ['🏰', '<strong>Fort Sint-Pieter (1701)</strong> – Hooggelegen fort op de Sint-Pietersberg ter bescherming van het zuiden'],
+        ['💥', '<strong>Belegeringen</strong> – Fransen belegerden de stad in 1673, 1748, 1793 en 1794 (3x met succes)'],
+        ['🗡️', '<strong>d\'Artagnan</strong> – De echte musketier sneuvelde bij het beleg van 1673 voor Maastricht'],
+        ['🌐', '<strong>Hoge & Lage Fronten</strong> – Indrukwekkende buitenwerken nog steeds zichtbaar in het Frontenpark'],
+      ],
+      persons: [
+        { emoji:'🏴', name:'Frederik Hendrik van Oranje', role:'Stadhouder (1584–1647)', desc:'Veroverde Maastricht in 1632 na een meesterlijk beleg van 23 dagen; zijn paralleltrenches waren revolutionair en werden in heel Europa nagebootst.' },
+        { emoji:'🏗️', name:'Menno van Coehoorn', role:'Vestingbouwer (1641–1704)', desc:'Dé vestingbouwer van de Republiek. Ontwierp de vestinggordel rond Maastricht met buitenwerken, lunetten en kazematten. Rivaal van Vauban.' },
+        { emoji:'🗡️', name:"Charles de Batz (d'Artagnan)", role:'Musketier (1611–1673)', desc:'Het historische model voor de romanfiguur sneuvelde op 25 juni 1673 bij de bestorming van Maastricht tijdens het beleg door Lodewijk XIV.' },
+        { emoji:'⚙️', name:'Sébastien le Prestre de Vauban', role:'Frans vestingbouwer & maarschalk (1633–1707)', desc:'De grootste vestingbouwer van de 17e eeuw. Vauban leidde in 1673 de aanval op Maastricht namens Lodewijk XIV en veroverde de stad in slechts 13 dagen. Hij paste hier zijn revolutionaire aanvalsmethode toe: een stelsel van parallelloopgraven en zigzag-sappen waarmee troepen gedekt de vestingmuren konden naderen. Na de verovering bestudeerde hij de Maastrichtse verdedigingswerken grondig. Zijn methodes werden de Europese standaard voor vestingoorlogvoering en werden door zijn rivaal Menno van Coehoorn ook toegepast in de verdediging van Maastricht. Vauban ontwierp of verbeterde in zijn leven meer dan 300 vestingen in Frankrijk. In 2008 werden 12 van zijn vestingwerken op de UNESCO Werelderfgoedlijst geplaatst.' },
+        { emoji:'👑', name:'Lodewijk XIV', role:'Koning van Frankrijk (1638–1715)', desc:'Belegerde Maastricht in 1673 met 45.000 man en veroverde de stad in 13 dagen. Een keerpunt in de vestingoorlogvoering.' },
+      ]
+    },
+    'Frans Bestuur & Opheffing': {
+      years: '1794 – 1867',
+      icon: '⚜️',
+      color: '#4d5656',
+      accentColor: '#85929e',
+      desc: 'Na de Franse inname (1794) bleef Maastricht eerst Frans vestingstad. Onder Willem I werd Fort Koning Willem I gebouwd. In 1867 hief koning Willem III de vestingstatus op — het begin van grootschalige sloop, maar ook van stadsuitbreiding.',
+      facts: [
+        ['🇫🇷', '<strong>1794 – Franse inname</strong> – Maastricht onderdeel van het Franse Departement Ourthe'],
+        ['🏗️', '<strong>Fort Koning Willem I (1823)</strong> – Laatste grote vestingwerk ten noorden van de stad, gebouwd onder Willem I'],
+        ['⚜️', '<strong>Nieuwe Bossche Fronten</strong> – Modernisering van de noordelijke vestingwerken in de 19e eeuw'],
+        ['📜', '<strong>1867 – Opheffing vesting</strong> – Koning Willem III hief op 29 mei de vestingstatus op'],
+        ['🏚️', '<strong>Sloop (1867–1930)</strong> – Bijna alle stadspoorten, muren en buitenwerken gesloopt; 255 ha vestinggrond vrijgekomen'],
+        ['🌆', '<strong>Stadsuitbreiding</strong> – Vrijgekomen grond maakte industrie- en woningbouw mogelijk buiten de oude grenzen'],
+        ['🏛️', '<strong>Erfgoed bewaard</strong> – Helpoort, kazematten, Fort Sint-Pieter en de Fronten bleven gespaard en zijn nu monument'],
+        ['🔍', '<strong>SMV (1976)</strong> – Stichting Maastricht Vestingstad opgericht voor onderzoek en restauratie'],
+      ],
+      persons: [
+        { emoji:'🇫🇷', name:'Napoleon Bonaparte', role:'Frans generaal & keizer (1769–1821)', desc:'Onder zijn bewind bleef Maastricht een belangrijke vestingstad in het Franse keizerrijk als onderdeel van het Departement Ourthe (1795–1814).' },
+        { emoji:'👑', name:'Willem I der Nederlanden', role:'Koning (1772–1843)', desc:'Liet het gelijknamige fort ten noorden van de stad bouwen (1823); het laatste grote vestingwerk in Maastricht.' },
+        { emoji:'📜', name:'Willem III der Nederlanden', role:'Koning (1817–1890)', desc:'Hief op 29 mei 1867 de vestingstatus op; einde van 1800 jaar vestinggeschiedenis en begin van de moderne stadsuitbreiding.' },
+        { emoji:'🔍', name:'A.F. van Beurden', role:'Historicus (1858–1939)', desc:'Pionier in de studie van Maastrichts vestingverleden; documenteerde talloze historische werken vlak voordat ze werden gesloopt.' },
+      ]
+    },
+  };
+
+  // 6 segments × 60° each
+  // Boundary angles (from-top CW): 0, 60, 120, 180, 240, 300, 360
+  const sliceDefs = [
+    { key: 'Romeinse Tijd',              start:   0, end:  60 },
+    { key: 'Vroege Middeleeuwen',         start:  60, end: 120 },
+    { key: 'Middeleeuwen – Stadsmuren',   start: 120, end: 180 },
+    { key: 'Bourgondisch & Spaans Bestuur', start: 180, end: 240 },
+    { key: 'Republiek & Vestinggordel',   start: 240, end: 300 },
+    { key: 'Frans Bestuur & Opheffing',   start: 300, end: 360 },
+  ];
+
+  // Emoji at midpoint of each slice, at 65% radius
+  function svgPt(fromTopCW, dist=155) {
+    const rad = (fromTopCW - 90) * Math.PI / 180;
+    return [250 + dist*Math.cos(rad), 250 + dist*Math.sin(rad)];
+  }
+
+  const emojiData = [
+    ['🏛️', 30,  26],   // Romein mid=30°
+    ['⛪',  90,  26],   // Vroeg Middel mid=90°
+    ['🗼', 150,  26],   // Middel mid=150°
+    ['👑', 210,  26],   // Spaans mid=210°
+    ['🛡️', 270,  26],   // Republiek mid=270°
+    ['⚜️', 330,  26],   // Frans mid=330°
+  ];
+
+  // Rebuild SVG with correct 60° segments
+  const wheelSvg = document.getElementById('wheel-svg');
+  const clipGroup = wheelSvg.querySelector('g[clip-path]');
+
+  // Remove old slices and rebuild
+  clipGroup.innerHTML = '';
+
+  // Background
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bg.setAttribute('cx','250'); bg.setAttribute('cy','250'); bg.setAttribute('r','238');
+  bg.setAttribute('fill','#0a0e14');
+  clipGroup.appendChild(bg);
+
+  const colors = ['url(#gRomein)','url(#gVroegMiddel)','url(#gMiddel)','url(#gSpaans)','url(#gRepubliek)','url(#gFrans)'];
+  const labels = ['Romeinse Tijd','Vroege Middeleeuwen','Middeleeuwen – Stadsmuren','Bourgondisch &amp; Spaans Bestuur','Republiek &amp; Vestinggordel','Frans Bestuur &amp; Opheffing'];
+
+  for(let i=0;i<6;i++){
+    const startDeg = i*60, endDeg = (i+1)*60;
+    const [x1,y1] = svgPt(startDeg, 238);
+    const [x2,y2] = svgPt(endDeg, 238);
+    const large = (endDeg-startDeg) > 180 ? 1 : 0;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','slice');
+    g.dataset.label = labels[i].replace('&amp;','&');
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M250,250 L${Math.round(x1)},${Math.round(y1)} A238,238 0 ${large},1 ${Math.round(x2)},${Math.round(y2)} Z`);
+    path.setAttribute('fill', colors[i]);
+    path.setAttribute('opacity','0.92');
+    g.appendChild(path);
+    clipGroup.appendChild(g);
+  }
+
+  // Divider lines
+  const lineGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+  lineGroup.setAttribute('stroke','rgba(33,150,200,0.45)');
+  lineGroup.setAttribute('stroke-width','2');
+  for(let i=0;i<6;i++){
+    const [x,y] = svgPt(i*60, 238);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1','250'); line.setAttribute('y1','250');
+    line.setAttribute('x2', Math.round(x)); line.setAttribute('y2', Math.round(y));
+    lineGroup.appendChild(line);
+  }
+  clipGroup.appendChild(lineGroup);
+
+  // Curved labels along inner edge of outer ring (radius 210)
+  const labelRadius = 210;
+  const shortLabels = [
+    'Romeinse Tijd',
+    'Vroege Middeleeuwen',
+    'Middeleeuwen',
+    'Bourgondisch & Spaans',
+    'Republiek & Vestinggordel',
+    'Frans Bestuur & Opheffing',
+  ];
+
+  const defs = wheelSvg.querySelector('defs');
+
+  for(let i = 0; i < 6; i++){
+    const startDeg = i * 60;
+    const midDeg   = startDeg + 30; // midpoint of slice
+
+    // Arc path for textPath: starts 25° before mid, ends 25° after
+    const arcStart = startDeg + 5;
+    const arcEnd   = startDeg + 55;
+    const [ax1, ay1] = svgPt(arcStart, labelRadius);
+    const [ax2, ay2] = svgPt(arcEnd,   labelRadius);
+
+    // Define arc path in defs
+    const pathId = `labelPath${i}`;
+    const arcPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    arcPath.setAttribute('id', pathId);
+    arcPath.setAttribute('d', `M${Math.round(ax1)},${Math.round(ay1)} A${labelRadius},${labelRadius} 0 0,1 ${Math.round(ax2)},${Math.round(ay2)}`);
+    arcPath.setAttribute('fill','none');
+    defs.appendChild(arcPath);
+
+    // Text element following the arc
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('font-family','Cinzel,serif');
+    text.setAttribute('font-size','9');
+    text.setAttribute('font-weight','700');
+    text.setAttribute('fill','rgba(255,255,255,0.85)');
+    text.setAttribute('letter-spacing','0.5');
+
+    const tp = document.createElementNS('http://www.w3.org/2000/svg','textPath');
+    tp.setAttributeNS('http://www.w3.org/1999/xlink','href',`#${pathId}`);
+    tp.setAttribute('startOffset','50%');
+    tp.setAttribute('text-anchor','middle');
+    tp.textContent = shortLabels[i];
+    text.appendChild(tp);
+    clipGroup.appendChild(text);
+  }
+
+  // Build emoji overlays
+  const container = document.getElementById('wheel-container');
+  const emojiSpans = emojiData.map(([emoji, angleDeg, size], i) => {
+    const [sx, sy] = svgPt(angleDeg, 155);
+    const span = document.createElement('span');
+    span.className = 'period-emoji';
+    span.textContent = emoji;
+    span.style.fontSize = size + 'px';
+    const pxCx = sx * scale, pxCy = sy * scale;
+    span.style.left = (pxCx - size*0.6) + 'px';
+    span.style.top  = (pxCy - size*0.6) + 'px';
+    span._origAngle = Math.atan2(pxCy - CY, pxCx - CX);
+    span._dist = Math.hypot(pxCx - CX, pxCy - CY);
+    span._origDist = Math.hypot(sx - 250, sy - 250); // unscaled SVG distance
+    span._size = size;
+    container.appendChild(span);
+    return span;
+  });
+
+  let currentAngle = 0, spinning = false, rafId = null;
+
+  function applyRotation(deg) {
+    // Recalculate scale live so it's always correct on any screen size
+    scale = getScale();
+    CX = getCX(); CY = getCY();
+    document.getElementById('wheel-svg').style.transform = `rotate(${deg}deg)`;
+    const rad = deg * Math.PI / 180;
+    emojiSpans.forEach((span, i) => {
+      const size = emojiData[i][2] * scale / (480/500); // scale emoji size too
+      span.style.fontSize = size + 'px';
+      const newAngle = span._origAngle + rad;
+      // Recalculate dist relative to current scale
+      const origDist = span._origDist;
+      const nx = CX + Math.cos(newAngle) * origDist * scale / (480/500);
+      const ny = CY + Math.sin(newAngle) * origDist * scale / (480/500);
+      span.style.left = (nx - size*0.6) + 'px';
+      span.style.top  = (ny - size*0.6) + 'px';
+    });
+  }
+
+  function getSliceAtPointer(totalDeg) {
+    const a = (360 - (totalDeg % 360)) % 360;
+    for (const s of sliceDefs) {
+      if (a >= s.start && a < s.end) return s.key;
+    }
+    return 'Romeinse Tijd';
+  }
+
+  function showInfo(key) {
+    const data = periodData[key];
+    if (!data) return;
+    const infoPanel = document.getElementById('info-panel');
+    infoPanel.className = 'info-panel slide-in';
+    infoPanel.innerHTML = `
+      <div class="panel-header" style="background: linear-gradient(135deg, ${data.accentColor}22, ${data.color}44); border-bottom: 1px solid ${data.accentColor}44">
+        <div class="period-badge">${data.years}</div>
+        <div class="category-header">
+          <span class="cat-icon">${data.icon}</span>
+          <div>
+            <div class="cat-name" style="color:${data.accentColor}">${key}</div>
+          </div>
+        </div>
+        <p class="cat-desc">${data.desc}</p>
+      </div>
+      <div class="panel-body">
+        <div class="facts-title">Belangrijke feiten</div>
+        ${data.facts.map(([e,t]) => `
+          <div class="fact-item" style="border-left-color:${data.accentColor}88">
+            <span class="fact-emoji">${e}</span>
+            <span class="fact-text">${t}</span>
+          </div>`).join('')}
+        ${data.persons ? `
+        <div class="persons-title">👤 Sleutelfiguren</div>
+        ${data.persons.map(p => `
+          <div class="person-card">
+            <span class="person-avatar">${p.emoji}</span>
+            <div class="person-info">
+              <div class="person-name">${p.name}</div>
+              <div class="person-role">${p.role}</div>
+              <div class="person-desc">${p.desc}</div>
+            </div>
+          </div>`).join('')}` : ''}
+      </div>
+    `;
+  }
+
+  const btn = document.getElementById('spinBtn');
+  btn.addEventListener('click', () => {
+    if (spinning) {
+      spinning = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      btn.disabled = true;
+      const key = getSliceAtPointer(currentAngle);
+      showInfo(key);
+      setTimeout(() => {
+        btn.textContent = '⚔ Draai door de geschiedenis';
+        btn.disabled = false;
+      }, 600);
+      return;
+    }
+    spinning = true;
+    document.getElementById('info-panel').className = 'info-panel empty';
+    document.getElementById('info-panel').innerHTML = '<span style="font-size:38px">⚔️</span><p>Door de eeuwen heen...</p>';
+    btn.textContent = '🛑 Stop!';
+    const speed = 1 + Math.random() * 1;
+    function animate() {
+      if (!spinning) return;
+      currentAngle += speed;
+      applyRotation(currentAngle);
+      rafId = requestAnimationFrame(animate);
+    }
+    rafId = requestAnimationFrame(animate);
+  });
+
+  applyRotation(0);
+
+  // Re-render emoji positions on resize / orientation change
+  window.addEventListener('resize', () => applyRotation(currentAngle));
+
+  const tooltip = document.getElementById('tooltip');
+  document.querySelectorAll('.slice').forEach(slice => {
+    slice.addEventListener('mouseenter', () => {
+      if (spinning) return;
+      tooltip.textContent = slice.dataset.label;
+      tooltip.classList.add('visible');
+    });
+    slice.addEventListener('mousemove', e => {
+      tooltip.style.left = (e.clientX+14)+'px';
+      tooltip.style.top  = (e.clientY-30)+'px';
+    });
+    slice.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+  });
+</script>
+</body>
+</html>

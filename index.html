@@ -99,7 +99,6 @@
     width: 290px;
     min-width: 240px;
     max-width: 340px;
-    height: 520px;
     background: linear-gradient(180deg, #0d1117 0%, #111825 100%);
     border: 1px solid rgba(33,150,200,0.3);
     border-radius: 20px;
@@ -971,6 +970,17 @@
 
   // Re-render emoji positions on resize / orientation change
   window.addEventListener('resize', () => applyRotation(currentAngle));
+
+  function syncPanelHeight() {
+    const panel = document.getElementById('info-panel');
+    if (window.innerWidth <= 700) { panel.style.height = ''; return; }
+    const btnRect = document.getElementById('spinBtn').getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    panel.style.height = Math.round(btnRect.bottom - panelRect.top) + 'px';
+  }
+  window.addEventListener('load', syncPanelHeight);
+  window.addEventListener('resize', syncPanelHeight);
+  syncPanelHeight();
 
   const tooltip = document.getElementById('tooltip');
   document.querySelectorAll('.slice').forEach(slice => {

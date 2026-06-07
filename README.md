@@ -4,7 +4,8 @@ Een interactief "wiel van de geschiedenis" voor het Vestingmuseum Maastricht. De
 
 ## Probeer het uit
 
-**[Open de live versie →](https://jackey1947.github.io/museum-spellen-perioden/)**
+**[🇳🇱 Nederlandse versie →](https://jackey1947.github.io/museum-spellen-perioden/)**
+**[🇬🇧 English version →](https://jackey1947.github.io/museum-spellen-perioden/index-EN.html)**
 
 Werkt direct in elke moderne browser, ook op mobiel.
 
